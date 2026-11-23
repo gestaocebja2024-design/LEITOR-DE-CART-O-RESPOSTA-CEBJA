@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LEITOR DE CARTÃO-RESPOSTA CEBJA</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{--azul:#1f5fbf;--azul2:#e8f0fc;--verde:#1a8a4a;--vermelho:#c9302c;--laranja:#d9822b;--cinza:#6b7280;--borda:#dfe3ea;--fundo:#f5f7fb}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--fundo);color:#1d2330}
+  header{background:var(--azul);color:#fff;padding:14px 16px 0}
+  header h1{margin:0 0 10px;font-size:19px;font-weight:700}
+  nav{display:flex;gap:4px}
+  nav button{flex:1;border:0;background:rgba(255,255,255,.15);color:#fff;padding:10px 4px;font-size:14px;font-weight:600;border-radius:10px 10px 0 0;cursor:pointer}
+  nav button.on{background:var(--fundo);color:var(--azul)}
+  main{max-width:820px;margin:0 auto;padding:14px}
+  .sec{display:none}.sec.on{display:block}
+  .card{background:#fff;border:1px solid var(--borda);border-radius:14px;padding:14px;margin-bottom:12px}
+  h2{font-size:16px;margin:0 0 10px}
+  label{font-size:13px;color:var(--cinza);display:block;margin-bottom:4px}
+  input[type=text],input[type=number]{width:100%;padding:10px;border:1px solid var(--borda);border-radius:9px;font-size:15px;background:#fff}
+  .row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+  .row>div{flex:1;min-width:90px}
+  .btn{border:0;border-radius:10px;padding:11px 14px;font-size:15px;font-weight:600;cursor:pointer;background:var(--azul);color:#fff}
+  .btn.sec2{background:var(--azul2);color:var(--azul)}
+  .btn.perigo{background:#fdecec;color:var(--vermelho)}
+  .btn.grande{width:100%;padding:14px;font-size:16px}
+  .seg{display:flex;border:1px solid var(--borda);border-radius:9px;overflow:hidden}
+  .seg button{flex:1;border:0;background:#fff;padding:10px;font-size:14px;cursor:pointer}
+  .seg button.on{background:var(--azul);color:#fff}
+  .mat{border:1px solid var(--borda);border-radius:12px;padding:12px;margin-bottom:12px}
+  .mat-top{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
+  .mat-top .nome{flex:1 1 100%}.mat-top .num{width:100px}
+  .x{border:0;background:none;color:var(--vermelho);font-size:22px;cursor:pointer;padding:6px}
+  .gab{display:flex;flex-wrap:wrap;gap:12px 22px;margin-top:10px}
+  .gcol{display:flex;flex-direction:column;gap:6px}
+  .q{display:flex;align-items:center;gap:4px}
+  .q b{width:28px;font-size:14px;text-align:right;margin-right:4px}
+  .q button{width:32px;height:32px;border-radius:50%;border:1.5px solid #9aa3b2;background:#fff;font-weight:700;font-size:13px;color:#5b6474;cursor:pointer;padding:0}
+  .q button.on{background:var(--azul);border-color:var(--azul);color:#fff}
+  .rapido{margin-top:10px}
+  .aviso{font-size:13px;padding:9px 11px;border-radius:9px;margin-top:8px}
+  .aviso.erro{background:#fdecec;color:var(--vermelho)}
+  .aviso.ok{background:#e8f6ee;color:var(--verde)}
+  .aviso.info{background:var(--azul2);color:#1d3f75}
+  #prevWrap{background:#e9ecf2;border-radius:10px;padding:10px;text-align:center}
+  #prev{max-width:100%;background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.15)}
+  .camwrap{position:relative;width:100%;background:#111;border-radius:12px;overflow:hidden}
+  .camwrap video,.camwrap canvas{display:block;width:100%;height:auto}
+  .camwrap canvas{position:absolute;inset:0;width:100%;height:100%}
+  #status{font-size:14px;font-weight:600;text-align:center;padding:9px;border-radius:9px;margin:10px 0;background:#eef1f6;color:#3b4252}
+  #status.ok{background:#e8f6ee;color:var(--verde)}
+  .placar{text-align:center;padding:8px 0 4px}
+  .placar .n{font-size:46px;font-weight:800;color:var(--verde);line-height:1}
+  .placar .t{font-size:15px;color:var(--cinza);margin-top:4px}
+  #rNota{display:inline-block;margin-top:10px;background:var(--azul);color:#fff;font-weight:800;font-size:20px;padding:8px 18px;border-radius:999px}
+  tr.tot td{background:#eef3fc;font-weight:700;border-bottom:0}
+  tr.nota td{background:var(--azul);color:#fff;font-size:16px}
+  tr.nota td:first-child{border-radius:0 0 0 8px}tr.nota td:last-child{border-radius:0 0 8px 0}
+  table{width:100%;border-collapse:collapse;font-size:14px;margin-top:10px}
+  th,td{padding:8px 6px;border-bottom:1px solid var(--borda);text-align:center}
+  th:first-child,td:first-child{text-align:left}
+  th{font-size:12px;color:var(--cinza);font-weight:600}
+  .grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:5px;margin-top:12px}
+  .c{border-radius:8px;padding:5px 2px;text-align:center;font-size:12px;line-height:1.25;border:1px solid}
+  .c .num{font-weight:700}
+  .c.ok{background:#e8f6ee;border-color:#b5e0c6;color:var(--verde)}
+  .c.er{background:#fdecec;border-color:#f3c4c2;color:var(--vermelho)}
+  .c.an{background:#fff3e4;border-color:#f3d2a8;color:var(--laranja)}
+  .c.br{background:#f1f3f6;border-color:var(--borda);color:var(--cinza)}
+  .leg{display:flex;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--cinza);margin-top:8px}
+  .leg span:before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px;background:var(--k)}
+  .fotoBtn{position:relative;overflow:hidden;display:block;text-align:center}
+  .fotoBtn input{position:absolute;inset:0;opacity:0;cursor:pointer}
+  .slider{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--cinza)}
+  .slider input{flex:1}
+  #fotoRes{max-width:100%;border-radius:10px;margin-top:10px;display:none}
+  .hide{display:none!important}
+  #printArea{display:none}
+  @media print{
+    @page{size:A4;margin:0}
+    body{background:#fff}
+    body>*:not(#printArea){display:none!important}
+    #printArea{display:block}
+    #printArea img{width:210mm;height:297mm;display:block;page-break-after:always}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>📝 LEITOR DE CARTÃO-RESPOSTA CEBJA</h1>
+  <nav>
+    <button data-t="gab" class="on">1. Gabarito</button>
+    <button data-t="cart">2. Cartão</button>
+    <button data-t="corr">3. Corrigir</button>
+  </nav>
+</header>
+<main>
+  <!-- GABARITO -->
+  <section id="s-gab" class="sec on">
+    <div class="card">
+      <h2>Prova <span style="font-weight:400;font-size:13px;color:var(--cinza)">(alternativas A, B, C e D)</span></h2>
+      <div class="row">
+        <div style="flex:3;min-width:200px"><label>Título (aparece no cartão)</label><input type="text" id="titulo" placeholder="Ex.: Simulado 1 – 9º ano"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Matérias e respostas corretas</h2>
+      <div id="mats"></div>
+      <button class="btn sec2" id="addMat">+ Adicionar matéria</button>
+      <div id="valid"></div>
+    </div>
+  </section>
+
+  <!-- CARTÃO -->
+  <section id="s-cart" class="sec">
+    <div class="card">
+      <h2>Cartão-resposta para imprimir</h2>
+      <div class="aviso info" style="margin:0 0 10px">Imprima este cartão depois de montar o gabarito. Os 4 quadrados pretos dos cantos são a referência da câmera — não recorte nem cubra.</div>
+      <div id="prevWrap"><canvas id="prev"></canvas></div>
+      <div id="cartInfo" style="font-size:13px;color:var(--cinza);margin:8px 0 12px"></div>
+      <div class="row">
+        <div><button class="btn grande" id="btnPdf">⬇️ Baixar PDF (A4)</button></div>
+        <div id="wrapPrint"><button class="btn grande sec2" id="btnPrint">🖨️ Imprimir</button></div>
+      </div>
+      <div id="cartMsg"></div>
+    </div>
+  </section>
+
+  <!-- CORRIGIR -->
+  <section id="s-corr" class="sec">
+    <div class="card" id="camCard">
+      <div id="camArea" class="hide">
+        <div class="camwrap" id="camwrap"><video id="video" playsinline muted></video><canvas id="ov"></canvas></div>
+      </div>
+      <div id="status">Ligue a câmera ou tire uma foto do cartão.</div>
+      <div class="row">
+        <div><button class="btn grande" id="btnCam">🎥 Ligar câmera</button></div>
+        <div><label class="btn grande sec2 fotoBtn">📷 Usar foto<input type="file" id="foto" accept="image/*" capture="environment"></label></div>
+      </div>
+      <div class="slider" style="margin-top:12px">Sensibilidade<input type="range" id="sens" min="12" max="45" value="25"><span id="sensV"></span></div>
+      <div style="font-size:12px;color:var(--cinza);margin-top:8px">🔒 As fotos são lidas na hora e descartadas: nada é salvo no aparelho nem enviado para a internet.<br>Dica: cartão sobre fundo escuro, bem iluminado, com os 4 quadrados pretos aparecendo.</div>
+    </div>
+    <div class="card hide" id="resCard">
+      <div class="placar"><div class="n" id="rN"></div><div class="t" id="rT"></div><div id="rNota"></div></div>
+      <table><thead><tr><th>Matéria</th><th>Acertos</th><th>Nota (0 a 4)</th></tr></thead><tbody id="rTab"></tbody></table>
+      <div class="grade" id="rGrade"></div>
+      <div class="leg"><span style="--k:#bfe6cf">certa</span><span style="--k:#f6cdcb">errada</span><span style="--k:#f8dcb6">anulada (2+ marcações)</span><span style="--k:#e3e6eb">em branco</span></div>
+      <img id="fotoRes" alt="">
+      <button class="btn grande" id="btnProx" style="margin-top:14px">➡️ Próximo cartão</button>
+    </div>
+  </section>
+</main>
+<div id="printArea"></div>
+
+<script>
+// ===== Núcleo de leitura óptica (OMR) — sem dependências =====
+const OMR = (function () {
+  const W = 180, HEADER = 30, ROWH = 7, BSP = 5.2, BR = 2.0, LABELW = 6.5, GAP = 1.5, MK = 8;
+  const BAR = { x: 10, y: -1.25, w: 8, h: 2.5 };
+
+  // colunas de no máximo 10 questões; colunas que não cabem na largura vão para um novo bloco abaixo
+  function buildLayout(nQ, nAlt) {
+    nQ = Math.max(1, Math.min(120, nQ | 0));
+    const ROWS = 10, BANDGAP = 4;
+    const colW = LABELW + nAlt * BSP + GAP;
+    const perBand = Math.max(1, Math.floor(W / colW));
+    const ncols = Math.ceil(nQ / ROWS);
+    const rows = Math.min(ROWS, nQ);
+    const nBands = Math.ceil(ncols / perBand);
+    const bandH = rows * ROWH;
+    const x0 = (W - Math.min(ncols, perBand) * colW) / 2 + GAP / 2;
+    const H = HEADER + nBands * bandH + (nBands - 1) * BANDGAP + 4;
+    const qs = [];
+    for (let q = 1; q <= nQ; q++) {
+      const col = Math.floor((q - 1) / ROWS), r = (q - 1) % ROWS;
+      const band = Math.floor(col / perBand), c = col % perBand;
+      const cx = x0 + c * colW, y = HEADER + band * (bandH + BANDGAP) + (r + 0.5) * ROWH;
+      const b = [];
+      for (let a = 0; a < nAlt; a++) b.push({ x: cx + LABELW + BSP * (a + 0.5), y });
+      qs.push({ q, labelX: cx + LABELW - 1.0, y, bubbles: b });
+    }
+    return { W, H, nQ, nAlt, ncols, rows, qs, r: BR, MK, BAR, HEADER, ROWH };
+  }
+
+  // ---------- álgebra ----------
+  function solve(A, b) {
+    const n = b.length;
+    for (let i = 0; i < n; i++) {
+      let p = i;
+      for (let k = i + 1; k < n; k++) if (Math.abs(A[k][i]) > Math.abs(A[p][i])) p = k;
+      [A[i], A[p]] = [A[p], A[i]]; [b[i], b[p]] = [b[p], b[i]];
+      if (Math.abs(A[i][i]) < 1e-12) return null;
+      for (let k = i + 1; k < n; k++) {
+        const f = A[k][i] / A[i][i];
+        for (let j = i; j < n; j++) A[k][j] -= f * A[i][j];
+        b[k] -= f * b[i];
+      }
+    }
+    const x = new Array(n);
+    for (let i = n - 1; i >= 0; i--) {
+      let s = b[i];
+      for (let j = i + 1; j < n; j++) s -= A[i][j] * x[j];
+      x[i] = s / A[i][i];
+    }
+    return x;
+  }
+  function homography(src, dst) {
+    const A = [], b = [];
+    for (let i = 0; i < 4; i++) {
+      const [x, y] = src[i], [u, v] = dst[i];
+      A.push([x, y, 1, 0, 0, 0, -u * x, -u * y]); b.push(u);
+      A.push([0, 0, 0, x, y, 1, -v * x, -v * y]); b.push(v);
+    }
+    const h = solve(A, b);
+    return h ? [...h, 1] : null;
+  }
+  function apply(h, x, y) {
+    const w = h[6] * x + h[7] * y + h[8];
+    return [(h[0] * x + h[1] * y + h[2]) / w, (h[3] * x + h[4] * y + h[5]) / w];
+  }
+
+  // ---------- imagem ----------
+  function toGray(rgba, n) {
+    const g = new Uint8Array(n);
+    for (let i = 0, j = 0; i < n; i++, j += 4) g[i] = (rgba[j] * 77 + rgba[j + 1] * 150 + rgba[j + 2] * 29) >> 8;
+    return g;
+  }
+  function sample(g, w, h, x, y) {
+    const xi = Math.round(x), yi = Math.round(y);
+    if (xi < 0 || yi < 0 || xi >= w || yi >= h) return -1;
+    return g[yi * w + xi];
+  }
+
+  function findSquares(g, w, h) {
+    // limiar adaptativo por imagem integral
+    const iw = w + 1, I = new Uint32Array(iw * (h + 1));
+    for (let y = 0; y < h; y++) {
+      let row = 0;
+      for (let x = 0; x < w; x++) { row += g[y * w + x]; I[(y + 1) * iw + x + 1] = I[y * iw + x + 1] + row; }
+    }
+    const R = Math.max(8, Math.round(Math.max(w, h) / 20));
+    const bin = new Uint8Array(w * h);
+    for (let y = 0; y < h; y++) {
+      const y0 = Math.max(0, y - R), y1 = Math.min(h, y + R + 1);
+      for (let x = 0; x < w; x++) {
+        const x0 = Math.max(0, x - R), x1 = Math.min(w, x + R + 1);
+        const s = I[y1 * iw + x1] - I[y0 * iw + x1] - I[y1 * iw + x0] + I[y0 * iw + x0];
+        const m = s / ((y1 - y0) * (x1 - x0));
+        const v = g[y * w + x];
+        if (v < m * 0.72 && v < 170) bin[y * w + x] = 1;
+      }
+    }
+    // componentes conexos
+    const lab = new Int32Array(w * h);
+    const stack = new Int32Array(w * h);
+    const comps = [];
+    let L = 0;
+    const minA = Math.max(30, (w * h) / 20000);
+    for (let i = 0; i < w * h; i++) {
+      if (!bin[i] || lab[i]) continue;
+      L++;
+      let sp = 0; stack[sp++] = i; lab[i] = L;
+      let area = 0, sx = 0, sy = 0, mnx = w, mny = h, mxx = 0, mxy = 0;
+      while (sp) {
+        const p = stack[--sp], px = p % w, py = (p - px) / w;
+        area++; sx += px; sy += py;
+        if (px < mnx) mnx = px; if (px > mxx) mxx = px; if (py < mny) mny = py; if (py > mxy) mxy = py;
+        if (px > 0 && bin[p - 1] && !lab[p - 1]) { lab[p - 1] = L; stack[sp++] = p - 1; }
+        if (px < w - 1 && bin[p + 1] && !lab[p + 1]) { lab[p + 1] = L; stack[sp++] = p + 1; }
+        if (py > 0 && bin[p - w] && !lab[p - w]) { lab[p - w] = L; stack[sp++] = p - w; }
+        if (py < h - 1 && bin[p + w] && !lab[p + w]) { lab[p + w] = L; stack[sp++] = p + w; }
+      }
+      if (area < minA) continue;
+      const bw = mxx - mnx + 1, bh = mxy - mny + 1;
+      if (bw < 5 || bh < 5 || bw / bh > 1.8 || bh / bw > 1.8) continue;
+      const fill = area / (bw * bh);
+      if (fill < 0.45) continue;
+      comps.push({ L, area, cx: sx / area, cy: sy / area, mnx, mny, mxx, mxy });
+    }
+    const out = [];
+    for (const c of comps) {
+      let md = 0;
+      for (let y = c.mny; y <= c.mxy; y++) for (let x = c.mnx; x <= c.mxx; x++) {
+        if (lab[y * w + x] !== c.L) continue;
+        const d = (x - c.cx) ** 2 + (y - c.cy) ** 2;
+        if (d > md) md = d;
+      }
+      const ratio = c.area / md;            // quadrado ≈ 2, círculo ≈ 3,14
+      if (ratio > 1.35 && ratio < 2.25) out.push({ x: c.cx, y: c.cy, area: c.area, ratio });
+    }
+    out.sort((a, b) => b.area - a.area);
+    return out;
+  }
+
+  function orderQuad(pts) {
+    const cx = pts.reduce((s, p) => s + p.x, 0) / 4, cy = pts.reduce((s, p) => s + p.y, 0) / 4;
+    const o = pts.slice().sort((a, b) => Math.atan2(a.y - cy, a.x - cx) - Math.atan2(b.y - cy, b.x - cx));
+    let k = 0, best = Infinity;
+    o.forEach((p, i) => { if (p.x + p.y < best) { best = p.x + p.y; k = i; } });
+    return [0, 1, 2, 3].map(i => o[(k + i) % 4]);
+  }
+  function convexArea(q) {
+    let s = 0, sign = 0;
+    for (let i = 0; i < 4; i++) {
+      const a = q[i], b = q[(i + 1) % 4], c = q[(i + 2) % 4];
+      const cr = (b.x - a.x) * (c.y - b.y) - (b.y - a.y) * (c.x - b.x);
+      const sg = Math.sign(cr);
+      if (sign && sg !== sign) return 0;
+      sign = sg;
+      s += a.x * b.y - b.x * a.y;
+    }
+    return Math.abs(s) / 2;
+  }
+  function meanAt(g, w, h, H, pts) {
+    let s = 0, n = 0;
+    for (const [x, y] of pts) { const v = sample(g, w, h, ...apply(H, x, y)); if (v >= 0) { s += v; n++; } }
+    return n ? s / n : -1;
+  }
+
+  function detect(g, w, h, L) {
+    const sq = findSquares(g, w, h).slice(0, 10);
+    if (sq.length < 4) return { ok: false, reason: 'poucos', squares: sq };
+    const card = [[0, 0], [L.W, 0], [L.W, L.H], [0, L.H]];
+    const combos = [];
+    const n = sq.length;
+    for (let a = 0; a < n; a++) for (let b = a + 1; b < n; b++) for (let c = b + 1; c < n; c++) for (let d = c + 1; d < n; d++) {
+      const pts = [sq[a], sq[b], sq[c], sq[d]];
+      const ar = pts.map(p => p.area);
+      if (Math.max(...ar) / Math.min(...ar) > 6) continue;
+      const q = orderQuad(pts);
+      const A = convexArea(q);
+      if (A < w * h * 0.03) continue;
+      // tamanho do marcador coerente com o tamanho do cartão
+      const mk = Math.sqrt(ar.reduce((s, x) => s + x, 0) / 4);
+      const side = Math.sqrt(A / (L.W * L.H)); // px por mm aproximado
+      const exp = side * L.MK;
+      if (mk < exp * 0.45 || mk > exp * 2.0) continue;
+      combos.push({ q, A });
+    }
+    combos.sort((a, b) => b.A - a.A);
+    const barPts = [], refPts = [];
+    for (let i = 0; i < 5; i++) barPts.push([L.BAR.x + 1 + i * 1.5, 0]);
+    for (const x of [35, 60, 90, 120, 145]) refPts.push([x, 0]);
+    let found = null;
+    for (const cb of combos) {
+      let best = null;
+      for (let r = 0; r < 4; r++) {
+        const dst = [0, 1, 2, 3].map(i => { const p = cb.q[(i + r) % 4]; return [p.x, p.y]; });
+        // proporção largura/altura precisa combinar com a do cartão (evita misturar dois cartões da mesma folha)
+        const dd = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1]);
+        const asp = (dd(dst[0], dst[1]) + dd(dst[3], dst[2])) / (dd(dst[1], dst[2]) + dd(dst[0], dst[3]));
+        const fx = asp / (L.W / L.H);
+        if (fx > 1.6 || fx < 1 / 1.6) continue;
+        const H = homography(card, dst);
+        if (!H) continue;
+        const gb = meanAt(g, w, h, H, barPts), gr = meanAt(g, w, h, H, refPts);
+        if (gb < 0 || gr <= 0) continue;
+        const d = 1 - gb / gr;
+        // confere se o tamanho de cada marcador combina com a perspectiva calculada
+        let okSz = true;
+        for (let i = 0; i < 4 && okSz; i++) {
+          const [cx, cy] = card[i], k = L.MK / 2;
+          const poly = [[cx - k, cy - k], [cx + k, cy - k], [cx + k, cy + k], [cx - k, cy + k]].map(([x, y]) => apply(H, x, y));
+          let a2 = 0; for (let j = 0; j < 4; j++) { const p = poly[j], q = poly[(j + 1) % 4]; a2 += p[0] * q[1] - q[0] * p[1]; }
+          const exp = Math.abs(a2) / 2, got = cb.q[(i + r) % 4].area;
+          if (got < exp * 0.3 || got > exp * 2.5) okSz = false;
+        }
+        if (!okSz) continue;
+        if (!best || d > best.d) best = { d, H, r, dst };
+      }
+      if (best && best.d > 0.35) {
+        // se houver mais de um cartão na foto, fica com o mais próximo do centro
+        const cx = best.dst.reduce((s, p) => s + p[0], 0) / 4 - w / 2, cy = best.dst.reduce((s, p) => s + p[1], 0) / 4 - h / 2;
+        const dist = cx * cx + cy * cy;
+        if (!found || dist < found.dist) found = { ok: true, H: best.H, quad: best.dst, rot: best.r, dist };
+      }
+    }
+    if (found) return found;
+    return { ok: false, reason: combos.length ? 'orientacao' : 'quad', squares: sq };
+  }
+
+  function read(g, w, h, L, H, thr) {
+    thr = thr || 0.25;
+    const res = [];
+    const inner = [];
+    const rr = L.r * 0.6;
+    for (let i = -3; i <= 3; i++) for (let j = -3; j <= 3; j++) {
+      const dx = i / 3 * rr, dy = j / 3 * rr;
+      if (dx * dx + dy * dy <= rr * rr * 1.05) inner.push([dx, dy]);
+    }
+    for (const Q of L.qs) {
+      const ds = [];
+      for (const b of Q.bubbles) {
+        const gi = meanAt(g, w, h, H, inner.map(([dx, dy]) => [b.x + dx, b.y + dy]));
+        const half = L.ROWH / 2;
+        const up = meanAt(g, w, h, H, [[b.x - 1, b.y - half], [b.x, b.y - half], [b.x + 1, b.y - half]]);
+        const dn = meanAt(g, w, h, H, [[b.x - 1, b.y + half], [b.x, b.y + half], [b.x + 1, b.y + half]]);
+        const wht = Math.max(up, dn, 1);
+        ds.push(gi < 0 ? 0 : Math.max(0, 1 - gi / wht));
+      }
+      const marked = [];
+      ds.forEach((d, a) => { if (d > thr) marked.push(a); });
+      res.push({ q: Q.q, ds, marked });
+    }
+    return res;
+  }
+
+  return { buildLayout, detect, read, toGray, apply, homography, findSquares };
+})();
+
+
+</script>
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const LET='ABCD';
+const KEY='omr-cartao-v1';
+let cfg={titulo:'',nAlt:4,mats:[{nome:'Matemática',ini:1,fim:10}],gab:{}};
+try{const s=localStorage.getItem(KEY);if(s)cfg=Object.assign(cfg,JSON.parse(s));}catch(e){}
+function salvar(){try{localStorage.setItem(KEY,JSON.stringify(cfg));}catch(e){}}
+
+// ---------- abas ----------
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>abrir(b.dataset.t));
+function abrir(t){
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+  document.querySelectorAll('.sec').forEach(s=>s.classList.toggle('on',s.id==='s-'+t));
+  if(t==='cart')desenharPrev();
+  if(t!=='corr')pararCam();
+  if(t==='corr')prepararCorr();
+}
+
+// ---------- gabarito ----------
+$('titulo').value=cfg.titulo||'';
+$('titulo').oninput=e=>{cfg.titulo=e.target.value;salvar();};
+// sempre 4 alternativas (A a D)
+cfg.nAlt=4;for(const q in cfg.gab)if(cfg.gab[q]>=4)delete cfg.gab[q];salvar();
+
+function renderMats(){
+  const box=$('mats');box.innerHTML='';
+  cfg.mats.forEach((m,i)=>{
+    const d=document.createElement('div');d.className='mat';
+    d.innerHTML=`<div class="mat-top">
+      <div class="nome"><label>Matéria</label><input type="text" value="${esc(m.nome)}" data-k="nome"></div>
+      <div class="num"><label>Da questão</label><input type="number" min="1" max="120" value="${m.ini}" data-k="ini"></div>
+      <div class="num"><label>Até a</label><input type="number" min="1" max="120" value="${m.fim}" data-k="fim"></div>
+      <button class="x" title="Remover">×</button></div>
+      <div class="rapido"><label>Digitação rápida do gabarito (ex.: ABDCA…)</label><input type="text" data-k="rap" placeholder="Digite as letras em sequência" autocapitalize="characters"></div>
+      <div class="gab"></div>`;
+    d.querySelectorAll('input[data-k]').forEach(inp=>{
+      const k=inp.dataset.k;
+      if(k==='nome')inp.oninput=()=>{m.nome=inp.value;salvar();validar();};
+      else if(k==='rap')inp.oninput=()=>{
+        const s=inp.value.toUpperCase().replace(/[^A-D]/g,'');
+        for(let j=0;j<s.length&&m.ini+j<=m.fim;j++){const a=LET.indexOf(s[j]);if(a<cfg.nAlt)cfg.gab[m.ini+j]=a;}
+        salvar();desenharGab(d,m);validar();};
+      else inp.onchange=()=>{m[k]=Math.max(1,Math.min(120,parseInt(inp.value)||1));inp.value=m[k];salvar();desenharGab(d,m);validar();};
+    });
+    d.querySelector('.x').onclick=()=>{if(cfg.mats.length>1){cfg.mats.splice(i,1);salvar();renderMats();}};
+    box.appendChild(d);desenharGab(d,m);
+  });
+  validar();
+}
+function desenharGab(d,m){
+  const g=d.querySelector('.gab');g.innerHTML='';
+  if(m.fim<m.ini)return;
+  let col=null;
+  for(let q=m.ini;q<=m.fim;q++){
+    if((q-m.ini)%10===0){col=document.createElement('div');col.className='gcol';g.appendChild(col);}
+    const r=document.createElement('div');r.className='q';
+    r.innerHTML=`<b>${q}</b>`;
+    for(let a=0;a<cfg.nAlt;a++){
+      const b=document.createElement('button');b.textContent=LET[a];
+      if(cfg.gab[q]===a)b.classList.add('on');
+      b.onclick=()=>{cfg.gab[q]=a;salvar();r.querySelectorAll('button').forEach((x,k)=>x.classList.toggle('on',k===a));validar();};
+      r.appendChild(b);
+    }
+    col.appendChild(r);
+  }
+}
+$('addMat').onclick=()=>{
+  const ult=Math.max(0,...cfg.mats.map(m=>m.fim));
+  cfg.mats.push({nome:'',ini:ult+1,fim:Math.min(120,ult+10)});salvar();renderMats();
+};
+function esc(s){return String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function problemas(){
+  const p=[];const uso={};
+  cfg.mats.forEach(m=>{
+    const n=m.nome||'(sem nome)';
+    if(!m.nome.trim())p.push('Dê um nome a todas as matérias.');
+    if(m.fim<m.ini)p.push(`${n}: a questão final é menor que a inicial.`);
+    for(let q=m.ini;q<=m.fim;q++){
+      if(uso[q])p.push(`A questão ${q} está em ${uso[q]} e em ${n}.`);uso[q]=n;
+      if(cfg.gab[q]===undefined)p.push(`${n}: falta a resposta da questão ${q}.`);
+    }
+  });
+  return [...new Set(p)];
+}
+function validar(){
+  const p=problemas();
+  $('valid').innerHTML=p.length?`<div class="aviso erro">${p.slice(0,4).map(esc).join('<br>')}${p.length>4?'<br>…':''}</div>`
+    :`<div class="aviso ok">✔ Gabarito completo: ${nQ()} questões. Agora vá em <b>2. Cartão</b> para imprimir.</div>`;
+}
+function nQ(){return Math.max(1,...cfg.mats.map(m=>m.fim));}
+renderMats();
+
+// ---------- cartão ----------
+function layout(){return OMR.buildLayout(nQ(),cfg.nAlt);}
+function legenda(){return cfg.mats.filter(m=>m.fim>=m.ini).map(m=>`${m.nome||'?'}: ${m.ini}–${m.fim}`).join('   •   ');}
+function desenharCartao(ctx,L,ox,oy,s){
+  const P=(x,y)=>[ox+x*s,oy+y*s];
+  ctx.save();
+  ctx.fillStyle='#000';
+  const k=L.MK/2;
+  for(const [x,y] of [[0,0],[L.W,0],[L.W,L.H],[0,L.H]]){const [a,b]=P(x-k,y-k);ctx.fillRect(a,b,L.MK*s,L.MK*s);}
+  {const [a,b]=P(L.BAR.x,L.BAR.y);ctx.fillRect(a,b,L.BAR.w*s,L.BAR.h*s);}
+  ctx.textBaseline='alphabetic';
+  ctx.fillStyle='#111';ctx.font=`bold ${4.0*s}px Arial`;
+  let t=cfg.titulo||'Cartão-Resposta';ctx.textAlign='left';
+  ctx.fillText(t,...P(8,8));
+  ctx.font=`${3.0*s}px Arial`;ctx.fillStyle='#222';
+  ctx.fillText('Nome: ______________________________________   Turma: ________   Nº: _____',...P(8,15));
+  ctx.font=`${2.6*s}px Arial`;ctx.fillStyle='#333';
+  let lg=legenda();while(ctx.measureText(lg).width>(L.W-12)*s&&lg.length>5)lg=lg.slice(0,-2);
+  ctx.fillText(lg,...P(8,21));
+  ctx.font=`${2.3*s}px Arial`;ctx.fillStyle='#666';
+  ctx.fillText('Preencha toda a bolinha com caneta azul ou preta. Duas marcações na mesma questão anulam a questão.',...P(8,26));
+  for(const Q of L.qs){
+    ctx.fillStyle='#111';ctx.font=`bold ${2.8*s}px Arial`;ctx.textAlign='right';ctx.textBaseline='middle';
+    ctx.fillText(String(Q.q).padStart(2,'0'),...P(Q.labelX,Q.y+0.15));
+    Q.bubbles.forEach((b,a)=>{
+      const [cx,cy]=P(b.x,b.y);
+      ctx.beginPath();ctx.arc(cx,cy,L.r*s,0,Math.PI*2);ctx.lineWidth=0.25*s;ctx.strokeStyle='#444';ctx.stroke();
+      ctx.fillStyle='#9a9a9a';ctx.font=`${2.2*s}px Arial`;ctx.textAlign='center';
+      ctx.fillText(LET[a],cx,cy+0.1*s);
+    });
+  }
+  ctx.restore();
+}
+function paginaA4(s){
+  const L=layout();
+  const c=document.createElement('canvas');c.width=Math.round(210*s);c.height=Math.round(297*s);
+  const ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);
+  const bloco=L.H+L.MK, gap=12;let y=12, n=0;
+  while(y+bloco<=290||n===0){
+    if(n>0){ctx.setLineDash([2*s,2*s]);ctx.strokeStyle='#aaa';ctx.lineWidth=0.3*s;ctx.beginPath();ctx.moveTo(8*s,(y-gap/2)*s);ctx.lineTo(202*s,(y-gap/2)*s);ctx.stroke();ctx.setLineDash([]);}
+    desenharCartao(ctx,L,(15)*s,(y+L.MK/2)*s,s);
+    n++;y+=bloco+gap;
+  }
+  return {c,n};
+}
+function desenharPrev(){
+  const {c,n}=paginaA4(4);
+  const p=$('prev');p.width=c.width;p.height=c.height;p.getContext('2d').drawImage(c,0,0);
+  p.style.width='min(100%,520px)';
+  const pr=problemas();
+  $('cartInfo').innerHTML=`${nQ()} questões • ${n} cartão${n>1?'ões':''} por folha A4`+(pr.length?` <br><span style="color:var(--vermelho)">⚠ O gabarito ainda tem pendências (aba 1).</span>`:'');
+}
+const emFrame=window.self!==window.top;
+let downloads=null;
+if(window.claude&&window.claude.use)window.claude.use('downloads').then(d=>downloads=d).catch(()=>{});
+if(emFrame)$('wrapPrint').classList.add('hide');
+async function salvarArquivo(nome,blob){
+  if(downloads){
+    try{await downloads.save({filename:nome,data:blob});return true;}
+    catch(e){if(e&&e.code==='declined')return false;}
+  }
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=nome;document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},4000);return true;
+}
+$('btnPdf').onclick=async()=>{
+  const {c}=paginaA4(12);
+  const nome=(cfg.titulo||'cartao-resposta').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^\w-]+/g,'-').toLowerCase();
+  if(window.jspdf){
+    const pdf=new window.jspdf.jsPDF({unit:'mm',format:'a4'});
+    pdf.addImage(c.toDataURL('image/png'),'PNG',0,0,210,297);
+    await salvarArquivo(nome+'.pdf',pdf.output('blob'));
+  }else{
+    c.toBlob(b=>salvarArquivo(nome+'.png',b),'image/png');
+  }
+};
+$('btnPrint').onclick=()=>{
+  const {c}=paginaA4(12);
+  $('printArea').innerHTML=`<img src="${c.toDataURL('image/png')}">`;
+  setTimeout(()=>window.print(),300);
+};
+
+// ---------- correção ----------
+const sens=$('sens');
+function thr(){return (+sens.value)/100;}
+sens.oninput=()=>{$('sensV').textContent=sens.value;};$('sensV').textContent=sens.value;
+let stream=null,rodando=false,ultimo=null,repet=0,congelado=false,ignorar=null,Lcur=null;
+const proc=document.createElement('canvas');const pctx=proc.getContext('2d',{willReadFrequently:true});
+function prepararCorr(){
+  const p=problemas();
+  if(p.length)status('⚠ Complete o gabarito na aba 1 antes de corrigir.',false);
+  else if(!stream)status('Ligue a câmera ou tire uma foto do cartão.',false);
+}
+function status(t,ok){const s=$('status');s.textContent=t;s.classList.toggle('ok',!!ok);}
+$('btnCam').onclick=async()=>{
+  if(stream){pararCam();return;}
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){semCamera();return;}
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}},audio:false});
+  }catch(e){stream=null;semCamera();return;}
+  const v=$('video');v.srcObject=stream;await v.play().catch(()=>{});
+  $('camArea').classList.remove('hide');$('btnCam').textContent='⏹ Desligar câmera';
+  $('resCard').classList.add('hide');congelado=false;ignorar=null;
+  rodando=true;status('Procurando o cartão… mostre os 4 quadrados pretos.',false);loop();
+};
+function semCamera(){
+  status('A câmera ao vivo não está disponível aqui. Use o botão “📷 Usar foto” — ele abre a câmera do celular para fotografar o cartão.',false);
+}
+function pararCam(){
+  rodando=false;
+  if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}
+  $('camArea').classList.add('hide');$('btnCam').textContent='🎥 Ligar câmera';
+}
+function prepFrame(src,sw,sh,max){
+  const k=Math.min(1,max/Math.max(sw,sh));
+  proc.width=Math.round(sw*k);proc.height=Math.round(sh*k);
+  pctx.drawImage(src,0,0,proc.width,proc.height);
+  const d=pctx.getImageData(0,0,proc.width,proc.height);
+  return OMR.toGray(d.data,proc.width*proc.height);
+}
+function analisar(g,w,h){
+  Lcur=layout();
+  const det=OMR.detect(g,w,h,Lcur);
+  if(!det.ok)return null;
+  const leit=OMR.read(g,w,h,Lcur,det.H,thr());
+  return {det,leit};
+}
+function loop(){
+  if(!rodando)return;
+  const v=$('video');
+  if(!congelado&&v.videoWidth){
+    const g=prepFrame(v,v.videoWidth,v.videoHeight,1280);
+    const w=proc.width,h=proc.height;
+    const r=analisar(g,w,h);
+    const ov=$('ov');ov.width=w;ov.height=h;const o=ov.getContext('2d');o.clearRect(0,0,w,h);
+    if(r){
+      const chave=r.leit.map(x=>x.marked.join('')).join('|');
+      desenharOverlay(o,r);
+      if(ignorar&&chave===ignorar){status('Troque o cartão para corrigir o próximo.',false);}
+      else{
+        ignorar=null;
+        repet=(chave===ultimo)?repet+1:1;ultimo=chave;
+        status('Cartão encontrado — segure firme…',true);
+        if(repet>=3){congelado=true;ignorar=chave;if(navigator.vibrate)try{navigator.vibrate(120);}catch(e){}mostrarResultado(r.leit,null);}
+      }
+    }else{repet=0;ultimo=null;if(ignorar)ignorar=null;status('Procurando o cartão… mostre os 4 quadrados pretos.',false);}
+  }
+  setTimeout(loop,110);
+}
+function corDe(q,leit){
+  const gab=cfg.gab[q];const m=leit.marked;
+  if(m.length>1)return 'an';if(!m.length)return 'br';return m[0]===gab?'ok':'er';
+}
+function desenharOverlay(o,r){
+  const {det,leit}=r,L=Lcur,H=det.H;
+  o.lineWidth=3;o.strokeStyle='#22c55e';o.beginPath();
+  det.quad.forEach(([x,y],i)=>i?o.lineTo(x,y):o.moveTo(x,y));o.closePath();o.stroke();
+  const rad=Math.max(3,Math.hypot(...[0,1].map(i=>OMR.apply(H,L.r,0)[i]-OMR.apply(H,0,0)[i])));
+  const cores={ok:'#16a34a',er:'#dc2626',an:'#f59e0b'};
+  leit.forEach((l,i)=>{
+    const Q=L.qs[i];const tipo=corDe(l.q,l);
+    l.marked.forEach(a=>{
+      const [x,y]=OMR.apply(H,Q.bubbles[a].x,Q.bubbles[a].y);
+      o.beginPath();o.arc(x,y,rad*1.15,0,7);o.lineWidth=3;o.strokeStyle=cores[tipo]||'#999';o.stroke();
+    });
+  });
+}
+function mostrarResultado(leit,img){
+  const por={};leit.forEach(l=>por[l.q]=l);
+  let tot=0,ac=0;const linhas=[];const cells=[];
+  // nota de 0 a 4, arredondada sempre para cima com 1 casa decimal
+  const notaDe=(a,n)=>n?Math.max(0,Math.ceil(a/n*4*10-1e-9)/10):0;
+  const fmt=x=>x.toFixed(1).replace('.',',');
+  cfg.mats.forEach(m=>{
+    const s={ok:0,er:0,an:0,br:0,n:0};
+    for(let q=m.ini;q<=m.fim;q++){
+      const l=por[q];if(!l)continue;s.n++;const t=corDe(q,l);s[t]++;
+      const mk=l.marked.map(a=>LET[a]).join('+')||'—';
+      cells.push(`<div class="c ${t}"><div class="num">${q}</div>${t==='ok'?mk+' ✓':t==='er'?mk+' ✗<br><small>certa: '+LET[cfg.gab[q]]+'</small>':t==='an'?mk:'branco'}</div>`);
+    }
+    tot+=s.n;ac+=s.ok;
+    linhas.push(`<tr><td>${esc(m.nome)}</td><td><b>${s.ok}</b>/${s.n}</td><td><b>${fmt(notaDe(s.ok,s.n))}</b></td></tr>`);
+  });
+  $('rN').textContent=`${ac} / ${tot}`;
+  $('rT').textContent=`questões corretas (${tot?Math.round(ac/tot*100):0}%)`;
+  const notaTxt=fmt(notaDe(ac,tot));
+  linhas.push(`<tr class="tot"><td>TOTAL</td><td><b>${ac}</b>/${tot}</td><td><b>${notaTxt}</b></td></tr>`);
+  $('rNota').textContent=`Nota: ${notaTxt} (de 0 a 4)`;
+  $('rTab').innerHTML=linhas.join('');
+  $('rGrade').innerHTML=cells.join('');
+  const fr=$('fotoRes');if(img){fr.src=img;fr.style.display='block';}else fr.style.display='none';
+  $('resCard').classList.remove('hide');
+  status('✔ Cartão lido!',true);
+  $('resCard').scrollIntoView({behavior:'smooth',block:'start'});
+}
+$('btnProx').onclick=()=>{
+  limparFoto();
+  $('resCard').classList.add('hide');congelado=false;repet=0;ultimo=null;
+  if(stream){status('Troque o cartão para corrigir o próximo.',false);window.scrollTo({top:0,behavior:'smooth'});}
+  else status('Tire a foto do próximo cartão.',false);
+};
+function limparFoto(){const fr=$('fotoRes');fr.removeAttribute('src');fr.style.display='none';pctx.clearRect(0,0,proc.width,proc.height);proc.width=proc.height=1;}
+$('foto').onchange=async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  if(problemas().length){status('⚠ Complete o gabarito na aba 1 antes de corrigir.',false);return;}
+  status('Lendo a foto…',false);
+  try{
+    let bmp;
+    try{bmp=await createImageBitmap(f,{imageOrientation:'from-image'});}catch(_){bmp=await createImageBitmap(f);}
+    let r=null,g;
+    for(const max of [1600,1100,2200]){
+      g=prepFrame(bmp,bmp.width,bmp.height,max);
+      r=analisar(g,proc.width,proc.height);if(r)break;
+    }
+    if(!r){$('resCard').classList.add('hide');status('Não encontrei o cartão. Fotografe de cima, com boa luz e os 4 quadrados pretos aparecendo.',false);return;}
+    if(bmp.close)bmp.close();
+    desenharOverlay(pctx,r);
+    mostrarResultado(r.leit,proc.toDataURL('image/jpeg',0.8));
+  }catch(err){status('Não consegui abrir essa imagem.',false);}
+};
+})();
+</script>
+</body>
+</html>
